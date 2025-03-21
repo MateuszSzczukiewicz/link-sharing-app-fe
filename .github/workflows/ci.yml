@@ -1,0 +1,69 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16, 18, 20, 22]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Cache pnpm store
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Svelte app
+        run: pnpm run build
+
+      - name: Run tests
+        run: pnpm run test -- --reporter=junit --outputFile=report.xml
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report
+          path: report.xml
+
+      - name: Check types
+        run: pnpm run tsc --noEmit
+
+      - name: Lint code
+        run: pnpm run lint
+
+      - name: Format code
+        run: pnpm run prettier --check
+
+      - name: Test application
+        run: |
+          pnpm run preview &
+          sleep 5
+          curl --fail http://localhost:3000 || exit 1
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: svelte-build
+          path: build/
