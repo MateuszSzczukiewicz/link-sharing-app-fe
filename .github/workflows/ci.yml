@@ -16,49 +16,49 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
+          cache: "yarn"
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Install yarn
+        run: npm install -g yarn
 
-      - name: Add global npm bin to PATH
-        run: echo "$(npm bin -g)" >> $GITHUB_PATH
+      - name: Add global yarn bin to PATH
+        run: echo "$(yarn global bin)" >> $GITHUB_PATH
 
-      - name: Cache pnpm store
+      - name: Cache yarn store
         uses: actions/cache@v4
         with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          path: ~/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-
+            ${{ runner.os }}-yarn-
 
       - name: Install dependencies
-        run: pnpm install
+        run: yarn install
 
       - name: Build Svelte app
-        run: pnpm run build
+        run: yarn build
 
       - name: Check types
-        run: pnpm check
+        run: yarn check
 
       # - name: Run tests
-      #   run: pnpm run test -- --reporter=junit --outputFile=report.xml
+      #   run: yarn test -- --reporter=junit --outputFile=report.xml
       #
       # - name: Upload test report
-      #   uses: actions/upload-artifact@v3
+      #   uses: actions/upload-artifact@v4
       #   with:
       #     name: test-report
       #     path: report.xml
-
+      #
       # - name: Lint code
-      #   run: pnpm run lint
+      #   run: yarn lint
       #
       # - name: Format code
-      #   run: pnpm run prettier --check
+      #   run: yarn prettier --check
 
       - name: Test application
         run: |
-          pnpm run preview &
+          yarn preview &
           sleep 5
           curl --fail http://localhost:3000 || exit 1
 
