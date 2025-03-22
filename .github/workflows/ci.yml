@@ -1,0 +1,65 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install yarn
+        run: npm install -g yarn
+
+      - name: Cache yarn store
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build Svelte app
+        run: yarn build
+
+      - name: Check types
+        run: yarn check
+
+      # - name: Run tests
+      #   run: yarn test -- --reporter=junit --outputFile=report.xml
+      #
+      # - name: Upload test report
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: test-report
+      #     path: report.xml
+      #
+      # - name: Lint code
+      #   run: yarn lint
+      #
+      # - name: Format code
+      #   run: yarn prettier --check
+
+      - name: Test application
+        run: |
+          yarn preview &
+          sleep 5
+          curl --fail http://localhost:4173 || exit 1
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: svelte-build
+          path: build/
